@@ -2,15 +2,21 @@ var mysql = require('mysql');
 var express = require('express');
 var session = require('express-session');
 var bodyParser = require('body-parser');
-var secrets = require('./secrets.js');
 var socket = require('socket.io');
+
+//init config vars
+if (!process.env.SQLPASSWORD) {
+  const secrets = require('./secrets.js');
+  process.env.SQLPASSWORD = secrets.SQLPASSWORD;
+  process.env.HASHKEY = secrets.HASHKEY;
+}
 
 //change sql to work with heroku
 //sql function
 var connection = mysql.createConnection({
   host     : 'localhost',
   user     : 'root',
-  password : secrets.password,
+  password : process.env.SQLPASSWORD,
   database : 'logintest'
 });
 
@@ -22,16 +28,14 @@ var server = app.listen(PORT, () => {console.log('listening on port', PORT, '...
 
 //session setup
 app.use(session({
-	secret: secrets.hashKey,
+	secret: process.env.HASHKEY,
 	resave: true,
 	saveUninitialized: true
 }));
 app.use(bodyParser.urlencoded({extended : true}));
 app.use(bodyParser.json());
 
-app.get('/', function(request, response) {
-	response.sendFile('/Users/noahliguori-bills/Desktop/sql-testing/Public/login.html');
-});
+app.use(express.static('Public'));
 
 app.post('/auth', function(request, response) {
 	var username = request.body.username;
