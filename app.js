@@ -20,8 +20,6 @@ var connection = mysql.createConnection({
   database : process.env.DATABASE
 });
 
-console.log(connection);
-
 //engine setup
 var app = express();
 
@@ -132,7 +130,6 @@ app.post('*/register-post', function(request, response) {
   }
   //create (psudo) random token
   var token = Math.random().toString().replace(/\./g, '');
-  console.log(token);
 
   //check input is valid
   if (email.length > 255) {
@@ -823,7 +820,7 @@ const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: process.env.NOAH_EMAIL,
-    pass: process.env.SQLPASSWORD
+    pass: process.env.EMAIL_PASSWORD
   }
 });
 
