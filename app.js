@@ -20,6 +20,8 @@ var connection = mysql.createConnection({
   database : 'noahandpranav'
 });
 
+console.log(connection);
+
 //engine setup
 var app = express();
 
