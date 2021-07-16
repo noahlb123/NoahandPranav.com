@@ -15,9 +15,9 @@ const PORT = process.env.PORT || 4002;
 //connect database
 var connection = mysql.createConnection({
   host     : process.env.JAWSDB_URL,
-  user     : 'root',
+  user     : process.env.SQL_USER,
   password : process.env.SQLPASSWORD,
-  database : 'noahandpranav'
+  database : process.env.DATABASE
 });
 
 console.log(connection);
