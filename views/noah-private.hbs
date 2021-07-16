@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html>
+	<body>
+		<p id="send-to" class="neon">Select a Contact</p>
+		<div id="content">
+			<div id="contact-container">
+				{{#each contactList}}
+				{{#if (neq ../target this.name)}}
+				<div id="{{this.name}}" class="contact" onclick="setReciever('{{this.name}}')" style="cursor: pointer;">
+					{{this.name}}
+				</div>
+				<hr>
+				{{/if}}
+				{{/each}}
+			</div>
+			<div id="chat-container">
+		    <div id="message-container">
+					<div id="spacer-top">
+						<!-- there is little difference between creativity and shitty design -->
+						<canvas height="75" width="0"></canvas>
+					</div>
+					<div id="spacer-bottom">
+						<!-- there is little difference between creativity and shitty design -->
+						<canvas height="46" width="0"></canvas>
+					</div>
+				</div>
+				<form id="send-container">
+					<input type="text" id="message-input" placeholder="message" autocomplete="off">
+					{{!--<button type="submit" id="send-button">^</button>--}}
+				</form>
+			</div>
+		</div>
+    <script>
+			//initialization vars
+			const rootURL = window.location.origin;
+			const name = "{{name}}";
+			const email = "{{email}}";
+			const loggedin = ("{{loggedin}}".toUpperCase() == 'TRUE');
+			const notes = new Set();
+			//reciever details
+			var rcvName = null;
+			var rcvId = null;
+			var groupChat = false;
+			{{#if permissions}}
+			//other admin's details
+			var otherName;
+			if (name == 'Noah') {
+				otherName = 'Pranav';
+			} else {
+				otherName = 'Noah';
+			}
+			var otherId = null;
+			{{/if}}
+			//noah and pranav details
+			var noahName = null;
+			var noahId = null;
+			var pranavName = null;
+			var pranavId = null;
+			//html elements
+			const messageContainer = document.getElementById('message-container');
+			const contacts = document.querySelectorAll('.contact');
+			const messageForm = document.getElementById('send-container');
+			const messageInput = document.getElementById('message-input');
+			const sendToP = document.getElementById('send-to');
+			const spacer = document.getElementById('spacer-bottom');
+			//message container
+			const msgObj = {};
+
+			//initial scroll to bottom of chat container
+			messageContainer.scrollTo(0, messageContainer.scrollHeight);
+
+			//initialize msgObj
+			function addSqlMsg(msg, sender, reciever) {
+				if (reciever.includes('Both')) {
+					{{#if permissions}}
+					logMsg(msg, reciever, sender);
+					{{else}}
+					logMsg(msg, 'Both', sender);
+					{{/if}}
+				} else if (sender == '{{target}}') {
+					logMsg(msg, reciever, '{{target}}');
+				} else {
+					logMsg(msg, sender, sender);
+				}
+			}
+			{{#each messages}}
+			addSqlMsg("{{this.message}}", "{{this.sender}}", "{{this.reciever}}");
+			{{/each}}
+
+			//if normal user and navigated through /chat, open person clicked on
+			{{#if (and person (not permissions))}}
+			setReciever("{{person}}");
+			{{/if}}
+
+
+			//initialize notifications
+			{{#each notes}}
+			notes.add("{{this}}")
+			{{/each}}
+			contacts.forEach((item) => {
+				if (notes.has(item.id)) {
+					item.classList.add('notification');
+				}
+			});
+
+			//send message
+			function sendMessage(id, data) {
+				if (id) {
+					socket.emit('private-chat', id, data);
+				} else {
+					socket.emit('save-message', id, data, 0);
+				}
+			}
+
+			//send message wihtout saving
+			function sendMessageNoSave(id, data) {
+				if (id) {
+					socket.emit('private-chat-without-save', id, data);
+				} else {
+					socket.emit('save-message', id, data, 0);
+					socket.emit('add-notification', id, data);
+				}
+			}
+
+			//socket.io code
+			var socket = io.connect(rootURL);
+
+			if (loggedin) {
+				{{#if permissions}}
+				socket.emit('new-{{target}}', name, email);
+				{{else}}
+				socket.emit('new-user', name, email);
+				{{/if}}
+			}
+
+			socket.on('chat-message', (id, data) => {
+				console.log('recieved message:', data);
+				//vars
+				let name = data.name;
+				let message = `${data.message}`;
+				if (name == rcvName) {
+					appendMessage(message, name);
+				} else {
+					logMsg(message, name, name);
+				}
+				//add notification
+				if (rcvName != name) {
+					notes.add(name);
+					document.getElementById(name).classList.add('notification');
+				}
+				//scroll to bottom of messages
+				messageContainer.scrollTo(0, messageContainer.scrollHeight);
+			});
+
+			messageForm.addEventListener('submit', e => {
+				//prevent default submission code
+				e.preventDefault();
+				//get ids
+				let fetchName = rcvName;
+				if (groupChat) {
+					fetchName = fetchName.replace('Both-', '');
+				}
+				fetch('/get-socketid/' + fetchName)
+					.then(response => response.json())
+					.then((dataPacket) => {
+						//init id vars
+						if (groupChat) {
+							var nonAdmin = fetchName;
+							var nonAdminId = dataPacket.id;
+						} else {
+							rcvId = dataPacket.id;
+						}
+						noahId = dataPacket.noah;
+						pranavId = dataPacket.pranav;
+						if (name == 'Noah') {
+							otherId = pranavId;
+						} else {
+							otherId = noahId;
+						}
+						//format message
+						var data = new Object();
+						data['message'] = messageInput.value;
+						if (!groupChat || rcvName != 'Both') {
+							data['recieverName'] = rcvName;
+						} else {
+							data['recieverName'] = 'Both-' + name;
+						}
+						data['senderName'] = "{{target}}";
+						//add to html
+						appendMessage(`${data["message"]}`, '{{target}}');
+						//scroll to bottom of messages
+						messageContainer.scrollTo(0, messageContainer.scrollHeight);
+						//reset html input
+						messageInput.value = '';
+
+						//send to normal reciever
+						sendMessage(rcvId, data);
+
+						//special case for group chat
+						if (groupChat) {
+							{{!--         Handle Noah or Pranav
+							--}}
+							{{#if permissions}}
+							//send to other admin
+							data['senderName'] = "Both-" + nonAdmin;
+							data['recieverName'] = otherName;
+							socket.emit('private-chat-without-save', otherId, data);
+							//send to non admin
+							data['senderName'] = 'Both';
+							data['recieverName'] = nonAdmin;
+							console.log(nonAdminId);
+							if (nonAdminId) {
+								socket.emit('private-chat-without-save', nonAdminId, data);
+							}
+							{{!--         Handle Everyone Else
+							--}}
+							{{else}}
+							data['senderName'] = "Both-" + name;
+							//send to Pranav
+							data['recieverName'] = "Pranav";
+							socket.emit('private-chat-without-save', pranavId, data);
+							//send to Noah
+							data['recieverName'] = "Noah";
+							socket.emit('private-chat-without-save', noahId, data);
+							{{/if}}
+						}
+					}
+				);
+				delete nonAdmin;
+				delete nonAdminId;
+			});
+
+			//add message to html
+			function appendMessage(message, sender, log = true) {
+				//create elements
+				const messageElement = document.createElement("p");
+				const messageDiv = document.createElement("div");
+				//give space for width if empty
+				if (message == '') {
+					message = "&nbsp;";
+				}
+				messageElement.innerHTML = message;
+				messageElement.classList.add('message');
+				messageDiv.classList.add('message');
+				//add class to specify if message is from me
+				if (sender == "{{target}}") {
+					messageElement.classList.add('from-me');
+					messageDiv.classList.add('from-me');
+				} else {
+					messageElement.classList.add('from-them');
+					messageDiv.classList.add('from-them');
+				}
+				//if groupchat, add name bubbles
+				if (groupChat && sender != name) {
+					//create elemnt
+					const nameBubble = document.createElement("p");
+					nameBubble.innerHTML = sender.charAt(0);
+					{{#if permissions}}
+					if ((nameBubble.innerHTML == 'N' || nameBubble.innerHTML == 'p')
+						&& sender != 'Noah' && sender != 'Pranav') {
+						nameBubble.innerHTML = 'X';
+					}
+					{{/if}}
+					//add classes
+					nameBubble.classList.add('name-bubble');
+					//append
+					messageDiv.appendChild(nameBubble);
+				}
+				//append children
+				messageDiv.appendChild(messageElement);
+				//add to html
+				messageContainer.insertBefore(messageDiv, spacer);
+				//log if needed
+				if (log) {
+					logMsg(message, rcvName, sender);
+				}
+			}
+
+			//add message to local data structure
+			function logMsg(message, name, sender) {
+				if (msgObj[name]) {
+					msgObj[name].push({message: message, sender: sender});
+				} else {
+					msgObj[name] = [{message: message, sender: sender}];
+				}
+			}
+
+			//change all html messages to different reciever
+			function setReciever(name) {
+				//get socket id from name
+				fetch('/get-socketid/' + name)
+					.then(response => response.json())
+					.then((data) => {
+						//set vars
+						rcvName = name;
+						//check if grop chat
+						if (name.includes('Both')) {
+							groupChat = true;
+						} else {
+							groupChat = false;
+						}
+						//initlize msgObj if needed
+						if (!msgObj[rcvName]) {
+							msgObj[rcvName] = [];
+						}
+						//display rcv
+						sendToP.innerText = rcvName;
+						//clear chatbox
+						let messages = messageContainer.querySelectorAll('.message');
+						if (messages) {
+							for (let i = 0; i < messages.length; i++) {
+								messages[i].remove();
+							}
+						}
+						//put new rcv msgs in chatbox
+						let newMsgs = msgObj[rcvName];
+						for (let i = 0; i < newMsgs.length; i++) {
+							let msgElm = newMsgs[i]
+							appendMessage(msgElm.message, msgElm.sender, false);
+						}
+						delete messageElement;
+						//update notificaiotns
+						if (notes.has(name)) {
+							socket.emit('remove-notification', name, "{{target}}");
+							document.getElementById(name).classList.remove('notification');
+						}
+						//show input bar
+						if (document.getElementById('send-container').style.display == '') {
+							document.getElementById('send-container').style.display = 'block';
+						}
+						//scroll to bottom of messages
+						messageContainer.scrollTo(0, messageContainer.scrollHeight);
+						//make selected name pink
+						let olds = document.querySelectorAll('.selected');
+						olds.forEach((item) => {
+							item.classList.remove('selected');
+						});
+						document.getElementById(name).classList.add('selected');
+						//add ids
+						if (data.id) {
+							rcvId = data.id;
+						} else {
+							rcvId = null;
+						}
+						//noah
+						if (data.noah) {
+							noahId = data.noah;
+							{{#if permissions}}
+							if (otherName == 'Noah') {
+								otherId = noahId;
+							}
+							{{/if}}
+						} else {
+							noahId = null;
+						}
+						//pranav
+						if (data.pranav) {
+							pranavId = data.pranav;
+							{{#if permissions}}
+							if (otherName == 'Pranav') {
+								otherId = pranavId;
+							}
+							{{/if}}
+						} else {
+							pranavId = null;
+						}
+					}
+				);
+			}
+
+		</script>
+  </body>
+</html>

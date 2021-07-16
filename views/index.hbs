@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+	<body>
+		<div id="background" class="sticky">
+			<div id="background-image">
+				<div id="title-holder" class="neon-div">
+					{{!--<iframe class="logo" src="https://ntmaker.gfto.ru/newneontexten/?image_height=200&image_width=300&image_font_shadow_width=30&image_font_size=80&image_background_color=000000&image_text_color=FF91A9&image_font_shadow_color=F7406B&image_url=&image_text=Noah and Pranav&image_font_family=Nickainley&" frameborder='no' scrolling='no' width="600" height="200"></iframe>--}}
+					<p class="neon">Noah and</p>
+					<p class="neon" id="pranav">Pranav</p>
+				</div>
+			</div>
+		</div>
+		<div id="scrollup">
+
+			<h1>A dating site with only two profiles,</h1>
+			<div id="desc-box">
+				<p>NoahandPranav.com is the first single choice dating site.</p>
+				<p class="color-pink">No matches, no swiping, no algorithms.</p>
+				<p>There's only a single choice between you and love!</p>
+			</div>
+
+			<h2>Choose Noah or Pranav</h2>
+			<p id="desc2">If that's too hard, dont worry, you can choose both!</p>
+			<div id="chat-now" class="neon-div neon-hover" onclick="window.location='/chat';">
+				<p class='neon'>Chat Now</p>
+			</div>
+
+			<h3>Still Not Convinced?</h3>
+			<p id="desc3">Watch this word from our CEO and founder, Noah Liguori-Bills-</p>
+			<iframe id="ceo-video" width="560" height="315" src="https://www.youtube.com/embed/K1gmVLLW1wk" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+		</div>
+	</body>
+	<script>
+	//get login button
+	const loginForm = document.getElementById("login-box");
+
+	//toggle popup visibility
+	function toggleLogin() {
+	  if (loginForm) {
+	    if (loginForm.style.display == "block") {
+	      loginForm.style.display = "none";
+	    } else {
+	      loginForm.style.display = "block";
+	    }
+	  } else {
+	    window.location.href = '/';
+	  }
+	}
+
+	// Get the header
+	var header = document.getElementById("banner");
+
+	//initally remove class
+	header.classList.remove("fill-banner");
+
+	// When the user scrolls the page, execute checkHeader
+	window.onscroll = function() {checkHeader()};
+
+	// Add the sticky class to the header when you reach its scroll position. Remove "sticky" when you leave the scroll position
+	function checkHeader() {
+		if (window.pageYOffset > window.innerHeight) {
+			header.classList.add("fill-banner");
+		} else {
+			header.classList.remove("fill-banner");
+		}
+	}
+	</script>
+</html>

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+	<body>
+		<div>
+			<div id="login-box" class="neon-div">
+				<p class="neon">Login</p>
+				{{#if invalid}}
+				<p id="invalid-login">Credentials invlaid</p>
+				{{/if}}
+				<form id="login-form" action="auth" method="POST">
+					<input class="pinkinput" type="text" name="email" placeholder="Email" required>
+					<input class="pinkinput" type="password" name="password" placeholder="Password" required>
+					<a id="forgot" href="/forgot">Forget?</a>
+					<input class="pinkinput" type="submit" value="Submit">
+				</form>
+				<button class="pinkinput" onclick="window.location='/register'">
+					Register
+				</button>
+			</div>
+		</div>
+	</body>
+</html>

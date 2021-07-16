@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <div id="banner" class="sticky fill-banner">
+    <a class="neon" id="logo" href="/">N+P</a>
+    <ul class="navbar">
+      {{#if (not (empty note))}}
+      <li id="circle-li" class="banner-elm">
+        <div class="circle"></div>
+      </li>
+      {{/if}}
+      <li class="banner-elm"><a href="/chat">Chat</a></li>
+      <li class="banner-elm">
+        {{#if loggedin}}
+        <a href="/profile">{{name}}</a>
+        {{else}}
+        <a href="/login">Login</a>
+        {{/if}}
+      </li>
+    </ul>
+  </div>
+</body>
+</html>

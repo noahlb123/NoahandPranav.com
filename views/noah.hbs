@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+	<body>
+		<h2>Noah Page</h2>
+		{{#if loggedin}}
+	  <p>Logged in as {{name}}</p>
+	  {{else}}
+	  <p>Not logged in</p>
+	  {{/if}}
+		<div id="chat-container">
+	    <div id="message-container"></div>
+	    <form id="send-container">
+	      <input type="text" id="message-input">
+	      <button type="submit" id="send-button">Send</button>
+	    </form>
+		</div>
+    <script>
+			//init vars
+			const rootURL = "{{rootURL}}";
+			const name = "{{name}}";
+			const email = "{{email}}";
+			const loggedin = ("{{loggedin}}".toUpperCase() == 'TRUE');
+
+			var socket = io.connect(rootURL);
+			const messageContainer = document.getElementById('message-container');
+			const messageForm = document.getElementById('send-container');
+			const messageInput = document.getElementById('message-input');
+
+			//message container
+			const msgObj = {};
+
+			//initialize msgObj
+			function addSqlMsg(msg, sender, reciever) {
+				if (sender == 'Noah') {
+					logMsg(msg, reciever);
+				} else {
+					logMsg(msg, sender);
+				}
+			}
+
+			{{#each messages}}
+			addSqlMsg("{{this.message}}", "{{this.sender}}", "{{this.reciever}}");
+			{{/each}}
+
+			if (loggedin) {
+				socket.emit('new-user', name, email);
+			}
+
+			socket.on('chat-message', (id, data) => {
+				appendMessage(`${data.name}: ${data.message}`);
+			});
+
+			socket.on('user-connected', name => {
+			  appendMessage(`${name} connected`);
+			});
+
+			socket.on('user-disconnected', (name, id) => {
+			  appendMessage(`${name} disconnected`);
+			});
+
+			messageForm.addEventListener('submit', e => {
+
+				e.preventDefault();
+				var data = new Object();
+				data['message'] = messageInput.value;
+				appendMessage(`You: ${data["message"]}`);
+				socket.emit('send-noah', data);
+				messageInput.value = '';
+
+			})
+
+			function appendMessage(message) {
+				const messageElement = document.createElement('div');
+				messageElement.innerText = message;
+				messageContainer.append(messageElement);
+			}
+
+			function logMsg(message, name) {
+				if (msgObj[name]) {
+					msgObj[name].push(message);
+				} else {
+					msgObj[name] = [message];
+				}
+			}
+		</script>
+  </body>
+</html>

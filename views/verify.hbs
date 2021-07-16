@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+	<body>
+		<div>
+			<div id="login-box" class="neon-div">
+				<p class="neon">Verify</p>
+				<form id="login-form" action="verify-post" method="POST">
+					<input class="pinkinput" type="text" name="token" placeholder="Email Code Here" autocomplete="off" required/>
+					<input type="hidden" name="name" value="{{name}}"/>
+					<input class="pinkinput" type="submit" value="Submit"/>
+				</form>
+			</div>
+		</div>
+	</body>
+</html>
