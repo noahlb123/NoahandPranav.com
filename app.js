@@ -265,48 +265,6 @@ app.get("/verify/:name?", (req, result) => {
   });
 });
 
-//chat with Noah
-app.get("/chat/depracated", (req, result) => {
-  result.set('Cache-Control', 'no-store');
-  let email = req.session.email;
-  let name = req.session.name;
-  let password = req.session.password;
-  let loggedin = req.session.loggedin;
-  if (name != 'Noah' && name != 'Pranav' && loggedin) {
-    //get messages
-    connection.query(
-      `SELECT messages.id, senders.name AS sender, recievers.name AS reciever, messages.message
-        FROM messages
-        INNER JOIN accounts AS senders
-        ON senders.id = messages.sender_id AND messages.type = 0
-        LEFT JOIN accounts AS recievers
-        ON recievers.id = messages.reciever_id
-        HAVING reciever = ? OR sender = ?;`,
-        [name, name],
-      (err, res, feilds) => {
-        //render page
-        let messages = res;
-        result.render("noah", {
-          name,
-          email,
-          loggedin,
-          messages,
-        });
-        delete contactList;
-        delete messages;
-      }
-    );
-  } else if (!loggedin){
-    result.render("login", {
-      loggedin,
-      name,
-      email,
-    });
-  } else {
-    result.send('This page is only for people who are not Pranav or Noah');
-  }
-});
-
 
 //functional chat page
 app.get("/chat/:person", (req, result) => {
@@ -373,7 +331,7 @@ app.get("/chat/:person", (req, result) => {
                 //get union of messages and res
                 messages = messageUnion(messages, res);
                 //render page
-                result.render("noah-private", {
+                result.render("front-end-chat", {
                   name,
                   email,
                   loggedin,
@@ -412,7 +370,7 @@ app.get("/chat/:person", (req, result) => {
                 //get union of messages and res
                 messages = messageUnion(messages, res);
                 //render page
-                result.render("noah-private", {
+                result.render("front-end-chat", {
                   name,
                   email,
                   loggedin,
@@ -794,8 +752,10 @@ io.on('connection', socket => {
 
   //save message without re-emiting
   socket.on('save-message', (id, data, type) => {
+    let senderName = data.senderName;
+    let recieverName = data.recieverName;
     //insert into sql db
-    insertMsg(data.message, data.senderName, data.recieverName, type);
+    insertMsg(data.message, senderName, recieverName, type);
   });
 
   //user disconnect
