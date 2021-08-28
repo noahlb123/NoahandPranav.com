@@ -141,6 +141,15 @@ app.post('*/register-post', function(request, response) {
   } else if (name.length > 63) {
     response.send('max name length is 63 characters');
     response.end();
+  } else if (!email.includes('@')) {
+    response.send('must be real email');
+    response.end();
+  } else if (email.includes(' ') || name.includes(' ')) {
+    response.send('no spaces allowed');
+    response.end();
+  } else if (email.includes('/') || name.includes('/')) {
+    response.send('no / allowed');
+    response.end();
   } else if (name.includes('Both')) {
     response.send('You cant have the word "Both" in your name. Its a really weird rule because Im really bad at coding');
     response.end();
@@ -407,6 +416,21 @@ app.get("/", (req, res) => {
   let loggedin = req.session.loggedin;
   let notes = noteObj[name];
   res.render("index", {
+    name,
+    email,
+    loggedin,
+    notes,
+  });
+});
+
+//delete later
+app.get("/test", (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  let email = req.session.email;
+  let name = req.session.name;
+  let loggedin = req.session.loggedin;
+  let notes = noteObj[name];
+  res.render("temp", {
     name,
     email,
     loggedin,
